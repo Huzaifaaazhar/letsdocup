@@ -1,0 +1,21 @@
+[server]
+# Large combined PDFs (MB)
+maxUploadSize = 1000
+headless = true
+# Only reachable from this computer — documents never leave the machine.
+address = "localhost"
+
+[browser]
+# No usage statistics are sent anywhere.
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#1F3B73"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F3F5F9"
+textColor = "#1A1F2B"
+
+[client]
+# Hide developer options such as "Deploy" for a clean presentation.
+toolbarMode = "viewer"

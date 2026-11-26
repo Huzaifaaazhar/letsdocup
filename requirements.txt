@@ -1,0 +1,10 @@
+# Core
+pymupdf>=1.24
+streamlit>=1.50
+pandas>=2.0
+openpyxl>=3.1
+# Offline OCR for scanned pages (no separate Windows installer needed)
+rapidocr_onnxruntime>=1.2
+# Only needed for generating synthetic test PDFs and running tests
+reportlab>=4.0
+pytest>=8.0
