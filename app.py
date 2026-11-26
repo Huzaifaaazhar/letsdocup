@@ -13,6 +13,20 @@ from ui.common import PAGES, inject_css  # noqa: E402
 db.init_db()
 inject_css()
 
+
+def _is_hosted() -> bool:
+    try:
+        host = (st.context.headers.get("Host") or "").split(":")[0].lower()
+    except Exception:
+        return False
+    return host not in ("", "localhost", "127.0.0.1", "::1")
+
+
+if _is_hosted():
+    st.warning("**Hosted test version.** Use only the synthetic test documents (Upload & Process → "
+               "'Download synthetic test BLs'). Do not upload real or confidential BLs to this link. "
+               "Data on the hosted version may be reset at any time.", icon="⚠️")
+
 if "nav" not in st.session_state:
     st.session_state["nav"] = "Upload & Process"
 if "batch_id" not in st.session_state:

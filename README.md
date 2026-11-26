@@ -58,6 +58,27 @@ You do not need to know Python. Follow these steps exactly.
    3. Open the **Dashboard**. You should see 14 documents: MBL 1, HBL 1, CONSOL 6, EPZ 1, Manual Review 5.
    4. Open **BL Folders**, then click any row to open the two-panel BL view.
 
+## 3b. Share a test link (free, Streamlit Community Cloud)
+
+Use this **only for testing with the synthetic documents**. A hosted link runs on Streamlit's servers, not on your computer, so **never upload real or confidential BLs to it**. The hosted app shows a warning banner saying so.
+
+1. Go to <https://share.streamlit.io> and click **Continue with GitHub**. Sign in with the GitHub account that owns this repository.
+2. Click **Create app**, then **Deploy a public app from GitHub**.
+3. Fill in:
+   - **Repository:** `Huzaifaaazhar/letsdocup`
+   - **Branch:** the branch that contains this code
+   - **Main file path:** `app.py`
+   - **App URL:** choose a name, e.g. `bl-manager-demo`
+4. Open **Advanced settings** and choose **Python 3.12**.
+5. Click **Deploy**. The first start takes about 5 minutes. You then get a link like `https://bl-manager-demo.streamlit.app` that you can share.
+6. Testers download fake BLs inside the app: **Upload & Process → "No test documents? Download synthetic test BLs"**.
+
+Notes on the hosted version:
+
+- **Access:** anyone with a public link can open it. To restrict it, open the app's **Settings → Sharing** on share.streamlit.io and invite specific email addresses.
+- **Data:** stored data (batches, Freight Forwarder list) is wiped whenever the hosted app restarts or goes to sleep.
+- **Size:** the free tier has limited memory, so very large PDFs may be slow there. Process big real batches on the local Windows installation.
+
 ## 4. Everyday use
 
 | Task | Where |

@@ -12,5 +12,5 @@ call .venv\Scripts\activate.bat
 echo Starting BL Manager... your browser will open in a few seconds.
 echo Address: http://localhost:8501
 start "" cmd /c "timeout /t 6 >nul & start http://localhost:8501"
-streamlit run app.py --server.port 8501
+streamlit run app.py --server.port 8501 --server.address localhost
 pause

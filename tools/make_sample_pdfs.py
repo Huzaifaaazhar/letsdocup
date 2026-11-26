@@ -69,6 +69,32 @@ def scenario() -> list[SynthBL]:
     ]
 
 
+def build_samples_zip() -> bytes:
+    """All synthetic test files in one ZIP (used by the in-app download button)."""
+    import io
+    import zipfile
+
+    bls = scenario()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("synthetic_test_files/combined_test_batch.pdf", make_pdf(bls, extra_blank_page_after=4))
+        for b in bls:
+            z.writestr(f"synthetic_test_files/individual/{b.bl}.pdf", make_pdf([b]))
+        z.writestr("synthetic_test_files/scanned_test_batch.pdf", rasterize(make_pdf(bls[:5]), 150))
+        xl = io.BytesIO()
+        pd.DataFrame({"Name": ["Trans Ocean Express Pvt Ltd", "Karachi Consolidators Limited",
+                               "Blue Water Cargo (Pvt) Ltd"]}).to_excel(xl, index=False)
+        z.writestr("synthetic_test_files/freight_forwarders_sample.xlsx", xl.getvalue())
+        z.writestr("synthetic_test_files/README.txt",
+                   "SYNTHETIC test documents - not real Bills of Lading.\n"
+                   "1. Freight Forwarders > Import / Export: upload freight_forwarders_sample.xlsx\n"
+                   "2. Upload & Process > Option A: upload combined_test_batch.pdf\n"
+                   "   Expected: 14 documents - MBL 1, HBL 1, CONSOL 6, EPZ 1, Manual Review 5\n"
+                   "3. Option B: upload all files in 'individual' (13 BLs)\n"
+                   "4. scanned_test_batch.pdf tests OCR of scanned pages\n")
+    return buf.getvalue()
+
+
 def main() -> None:
     out = ROOT / "sample_pdfs"
     (out / "individual").mkdir(parents=True, exist_ok=True)

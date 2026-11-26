@@ -2,8 +2,6 @@
 # Large combined PDFs (MB)
 maxUploadSize = 1000
 headless = true
-# Only reachable from this computer — documents never leave the machine.
-address = "localhost"
 
 [browser]
 # No usage statistics are sent anywhere.
