@@ -58,26 +58,23 @@ You do not need to know Python. Follow these steps exactly.
    3. Open the **Dashboard**. You should see 14 documents: MBL 1, HBL 1, CONSOL 6, EPZ 1, Manual Review 5.
    4. Open **BL Folders**, then click any row to open the two-panel BL view.
 
-## 3b. Share a test link (free, Streamlit Community Cloud)
+## 3b. Web version (shareable link on Vercel)
 
-Use this **only for testing with the synthetic documents**. A hosted link runs on Streamlit's servers, not on your computer, so **never upload real or confidential BLs to it**. The hosted app shows a warning banner saying so.
+The same application also runs as a **web page**. Vercel only delivers the program files. **All processing happens inside the visitor's own browser**, using Python compiled to WebAssembly (stlite + Pyodide). Uploaded PDFs are **not sent to Vercel or to any other server**.
 
-1. Go to <https://share.streamlit.io> and click **Continue with GitHub**. Sign in with the GitHub account that owns this repository.
-2. Click **Create app**, then **Deploy a public app from GitHub**.
-3. Fill in:
-   - **Repository:** `Huzaifaaazhar/letsdocup`
-   - **Branch:** the branch that contains this code
-   - **Main file path:** `app.py`
-   - **App URL:** choose a name, e.g. `bl-manager-demo`
-4. Open **Advanced settings** and choose **Python 3.12**.
-5. Click **Deploy**. The first start takes about 5 minutes. You then get a link like `https://bl-manager-demo.streamlit.app` that you can share.
-6. Testers download fake BLs inside the app: **Upload & Process → "No test documents? Download synthetic test BLs"**.
+| | Windows installation | Web version |
+|---|---|---|
+| Install needed | Yes (`install.bat`) | No — open the link |
+| Where PDFs are processed | Your computer | Your computer, inside the browser |
+| Scanned (image-only) PDFs (OCR) | Yes | **No** — such pages go to Manual Review |
+| Where results are stored | `data` folder | This browser only. Another browser or computer starts empty. |
+| First start | Instant | About 20–40 seconds while the browser downloads the engine |
 
-Notes on the hosted version:
+How the web version is built and deployed:
 
-- **Access:** anyone with a public link can open it. To restrict it, open the app's **Settings → Sharing** on share.streamlit.io and invite specific email addresses.
-- **Data:** stored data (batches, Freight Forwarder list) is wiped whenever the hosted app restarts or goes to sleep.
-- **Size:** the free tier has limited memory, so very large PDFs may be slow there. Process big real batches on the local Windows installation.
+- `web/build.py` copies `app.py`, `bl_manager/` and `ui/` into `web/dist/` and writes `web/dist/index.html`, which starts the app in the browser.
+- `vercel.json` tells Vercel to run that build and publish `web/dist`. Every push to the connected branch redeploys automatically.
+- To test the web version on your own PC, run `python web/build.py` and then `python -m http.server 8700 -d web/dist`, and open <http://localhost:8700>.
 
 ## 4. Everyday use
 
@@ -181,6 +178,7 @@ Each value also shows the page and the source text it was read from. Corrections
 | "Port 8501 is already in use" | BL Manager is already running in another window. Use that window, or close it and start again. |
 | Warning that OCR is not available | Scanned pages cannot be read, but text PDFs still work. Run `install.bat` again. If it still fails, ask IT to check that `rapidocr_onnxruntime` installs on your Python version (Python 3.12 is recommended). |
 | A real BL is not split or read correctly | Open **Dashboard → Page-by-page reconstruction detail** to see what was read on each page. Check **Settings → BL number pattern**. See section 8. |
+| Web version stays on the loading screen | Use an up-to-date Chrome or Edge, and check that the network allows `cdn.jsdelivr.net`. The browser downloads the Python engine from there. |
 | Something looks broken | Close the black window and run `run_app.bat` again. Your data is kept. |
 
 To run the automated tests, double-click **`run_tests.bat`**. All tests should show `PASSED`.

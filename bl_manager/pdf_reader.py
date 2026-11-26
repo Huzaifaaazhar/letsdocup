@@ -106,6 +106,11 @@ def _get_ocr():
     global _OCR_ENGINE, _OCR_ERROR
     if _OCR_ENGINE is not None or _OCR_ERROR is not None:
         return _OCR_ENGINE
+    import sys
+
+    if sys.platform == "emscripten":
+        _OCR_ERROR = "OCR is not available in the web version (use the Windows installation for scanned PDFs)"
+        return None
     try:
         from rapidocr_onnxruntime import RapidOCR  # type: ignore
 

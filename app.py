@@ -2,7 +2,16 @@
 
 Run with:  streamlit run app.py   (or double-click run_app.bat on Windows)
 """
+import os
+import sys
+
 import streamlit as st
+
+# Web version (runs inside the browser via stlite/Pyodide): keep data in the
+# browser's persistent storage (IndexedDB-backed folder /mnt).
+IN_BROWSER = sys.platform == "emscripten"
+if IN_BROWSER:
+    os.environ.setdefault("BLM_DATA_DIR", "/mnt/blm_data")
 
 st.set_page_config(page_title="BL Manager", page_icon="📄", layout="wide")
 
@@ -22,7 +31,12 @@ def _is_hosted() -> bool:
     return host not in ("", "localhost", "127.0.0.1", "::1")
 
 
-if _is_hosted():
+if IN_BROWSER:
+    st.info("**Web version — runs entirely inside your browser.** PDFs you upload are processed on this "
+            "computer and are not sent to any server. Results are kept in this browser only. "
+            "OCR for scanned (image-only) PDFs is available in the Windows installation, not in the web version.",
+            icon="🔒")
+elif _is_hosted():
     st.warning("**Hosted test version.** Use only the synthetic test documents (Upload & Process → "
                "'Download synthetic test BLs'). Do not upload real or confidential BLs to this link. "
                "Data on the hosted version may be reset at any time.", icon="⚠️")
