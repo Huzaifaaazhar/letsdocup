@@ -145,6 +145,23 @@ def classify(doc: dict, consol_info: dict, settings: dict, forwarders: list[dict
             "Compare the container numbers with the original document and correct them if necessary.",
         ))
 
+    suspects = fields.get("_meta_suspect_containers") or []
+    if suspects and not (fields.get("containers") or {}).get("user_value"):
+        hints = []
+        for sp in suspects:
+            h = f"'{sp['raw']}' (page {sp['page']})"
+            if sp["candidates"]:
+                h += " — if misread, it may be " + " or ".join(sp["candidates"][:3]) + " (passes check digit)"
+            hints.append(h)
+        review.append(_reason(
+            "UNREADABLE_CONTAINER",
+            "Container-like text could not be read reliably: " + "; ".join(hints) + ".",
+            "Some characters do not form a valid container number (typical OCR misread). The application does "
+            "not guess container numbers, because a wrong number could hide or invent a CONSOL relationship.",
+            "Read the container number on the original page and enter it with 'Edit extracted values' "
+            "(Containers field). Classification is then re-run for the whole batch.",
+        ))
+
     ulinks = consol_info.get("unidentified_links", {}).get(doc["doc_key"])
     if ulinks:
         warnings.append(

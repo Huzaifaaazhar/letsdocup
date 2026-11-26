@@ -411,3 +411,38 @@ def test_normalisation_helpers():
     assert container_check_digit_ok("CSQU3054384") is False
     assert normalize_name("Trans Ocean Express (Pvt.) Limited") == normalize_name("TRANS OCEAN EXPRESS PVT LTD")
     assert normalize_name("ABC Shipping") != normalize_name("ABC Shipping Lines")
+
+
+def test_hbl_number_kept_exactly_as_printed():
+    b = SynthBL("ONEYSHAB20200100", FWD, containers=[mc("TCLU", "202001")], hbl="TOE-HBL-7781")
+    _, docs = run([("x.pdf", make_pdf([b]))])
+    assert val(docs["ONEYSHAB20200100"], "hbl_number") == ["TOE-HBL-7781"]
+
+
+def test_unreadable_container_goes_to_manual_review_with_hint():
+    # Simulates an OCR misread: '6' printed as 'B'. Must not be auto-corrected.
+    b = SynthBL("ONEYSHAB20300100", EPZC, containers=["CAIUB022170"])
+    _, docs = run([("x.pdf", make_pdf([b]))])
+    d = docs["ONEYSHAB20300100"]
+    assert d["current_class"] == MANUAL_REVIEW
+    assert "UNREADABLE_CONTAINER" in codes(d)
+    reason = next(r for r in d["review_reasons"] if r["code"] == "UNREADABLE_CONTAINER")
+    assert "CAIUB022170" in reason["detected"] and "CAIU6022170" in reason["detected"]
+    assert val(d, "containers") == []          # nothing invented
+
+
+def test_container_with_inserted_character_is_flagged():
+    # OCR inserted an extra letter: 'TGHUS5532019'. Must be flagged, not silently dropped.
+    b = SynthBL("ONEYSHAB20400100", ORDER, containers=[mc("ONEU", "120034"), "TGHUS5532019"])
+    _, docs = run([("x.pdf", make_pdf([b]))])
+    d = docs["ONEYSHAB20400100"]
+    assert d["current_class"] == MANUAL_REVIEW and "UNREADABLE_CONTAINER" in codes(d)
+    reason = next(r for r in d["review_reasons"] if r["code"] == "UNREADABLE_CONTAINER")
+    assert "TGHUS5532019" in reason["detected"] and "TGHU5532019" in reason["detected"]
+
+
+def test_booking_and_seal_numbers_are_not_flagged():
+    b = SynthBL("ONEYSHAB20500100", ORDER, containers=[mc("TCLU", "205001")])
+    _, docs = run([("x.pdf", make_pdf([b]))])
+    assert "UNREADABLE_CONTAINER" not in codes(docs["ONEYSHAB20500100"])
+    assert docs["ONEYSHAB20500100"]["current_class"] == MBL

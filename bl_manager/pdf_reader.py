@@ -97,7 +97,14 @@ _OCR_ENGINE = None
 _OCR_ERROR: str | None = None
 
 
+IN_BROWSER = __import__("sys").platform == "emscripten"
+
+
 def ocr_available() -> tuple[bool, str]:
+    if IN_BROWSER:
+        from . import web_ocr
+
+        return web_ocr.available()
     eng = _get_ocr()
     return (eng is not None, _OCR_ERROR or "")
 
@@ -106,11 +113,6 @@ def _get_ocr():
     global _OCR_ENGINE, _OCR_ERROR
     if _OCR_ENGINE is not None or _OCR_ERROR is not None:
         return _OCR_ENGINE
-    import sys
-
-    if sys.platform == "emscripten":
-        _OCR_ERROR = "OCR is not available in the web version (use the Windows installation for scanned PDFs)"
-        return None
     try:
         from rapidocr_onnxruntime import RapidOCR  # type: ignore
 
@@ -121,7 +123,44 @@ def _get_ocr():
     return _OCR_ENGINE
 
 
+_NOISE = "|_[]{}()—–-=~.,:;'\"`!¦"
+
+
+def segments_from_ocr_lines(lines, scale: float) -> list[Segment]:
+    """Turn OCR lines of words [(text, x0, y0, x1, y1, conf), ...] (pixels) into
+    segments (PDF points). Words separated by a wide gap are split into separate
+    segments, exactly like the text-layer reader, so neighbouring boxes never merge."""
+    segs: list[Segment] = []
+    for words in lines:
+        words = [w for w in words if str(w[0]).strip().strip(_NOISE)]
+        words.sort(key=lambda w: w[1])
+        cur = None
+        for text, x0, y0, x1, y1, *_ in words:
+            h = max(y1 - y0, 1)
+            if cur is not None and x0 - cur[3] > max(1.6 * h, 18):
+                segs.append(cur)
+                cur = None
+            if cur is None:
+                cur = [str(text), x0, y0, x1, y1]
+            else:
+                cur[0] += " " + str(text)
+                cur[3] = max(cur[3], x1)
+                cur[2] = min(cur[2], y0)
+                cur[4] = max(cur[4], y1)
+        if cur is not None:
+            segs.append(cur)
+    return [Segment(" ".join(t.split()), a * scale, b * scale, c * scale, d * scale) for t, a, b, c, d in segs]
+
+
 def _segments_from_ocr(page: pymupdf.Page, dpi: int) -> list[Segment]:
+    if IN_BROWSER:
+        from . import web_ocr
+
+        # Tesseract reads small print noticeably better at >= 300 DPI
+        # (at 200 DPI it misread e.g. a '6' as 'B' in a container number).
+        dpi = max(dpi, 300)
+        png = page.get_pixmap(dpi=dpi).tobytes("png")
+        return segments_from_ocr_lines(web_ocr.recognize_png(png), 72.0 / dpi)
     eng = _get_ocr()
     if eng is None:
         raise RuntimeError(_OCR_ERROR or "OCR engine not available")

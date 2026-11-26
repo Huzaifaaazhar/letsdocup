@@ -66,7 +66,7 @@ The same application also runs as a **web page**. Vercel only delivers the progr
 |---|---|---|
 | Install needed | Yes (`install.bat`) | No — open the link |
 | Where PDFs are processed | Your computer | Your computer, inside the browser |
-| Scanned (image-only) PDFs (OCR) | Yes | **No** — such pages go to Manual Review |
+| Scanned (image-only) PDFs (OCR) | Yes (RapidOCR) | Yes (Tesseract.js, in the browser). Needs current **Chrome or Edge**. The OCR engine (~6 MB) downloads on first use. |
 | Where results are stored | `data` folder | This browser only. Another browser or computer starts empty. |
 | First start | Instant | About 20–40 seconds while the browser downloads the engine |
 
@@ -188,7 +188,7 @@ To run the automated tests, double-click **`run_tests.bat`**. All tests should s
 ## 8. Known limitations (honest status)
 
 - **The extraction has been developed and tested on synthetic BLs** that imitate a standard BL box layout. Real ONE BL PDFs have not been tested yet. Real layouts and label wording may differ. The engine finds fields by their printed labels, and the label list in `bl_manager/labels.py` is easy to extend. The first real batch should be checked carefully and any mis-read field reported, so the labels can be tuned. The application never invents values: anything it cannot find is shown as *"Not extracted — requires verification"*.
-- **OCR** (for scanned pages) works offline but is slower: about 1–3 seconds per page. It can misread characters, so OCR-read BLs are clearly marked.
+- **OCR** (for scanned pages) is slower: about 1–3 seconds per page. It can misread characters, so OCR-read values are clearly marked. Container-like text that is not a valid container number (e.g. `CAIUB022170`, or `TGHUS5532019` with an extra letter) sends the BL to **Manual Review** with the possible correct numbers as a hint. The application never auto-corrects a container number.
 - **Consignee name vs. address** is split by a simple rule: the first line, plus a following "Ltd / (Pvt) Ltd" line or "TO THE ORDER OF" + bank line, is the name. The full original consignee block is always kept and shown.
 - If a BL lists several weights or quantities (per container), all are listed and a warning is shown. The application does not guess which one is the total.
 - Single-user, local application. It has no login. Authentication and hosting are left for ONE IT to add when productionising.

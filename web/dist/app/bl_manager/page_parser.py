@@ -35,10 +35,11 @@ def _bl_regex(settings: dict) -> re.Pattern:
 
 
 def _first_token(text: str) -> str | None:
-    m = _TOKEN.search(text.replace(" ", "") if len(text.split()) == 1 else text)
+    """First document-number-like token, exactly as printed (hyphens kept)."""
+    m = _TOKEN.search(text)
     if not m:
         return None
-    tok = m.group(0).upper().replace("-", "")
+    tok = m.group(0).upper()
     # Must contain at least one digit to be a document number.
     return tok if any(ch.isdigit() for ch in tok) else None
 

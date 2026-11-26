@@ -34,7 +34,8 @@ def _is_hosted() -> bool:
 if IN_BROWSER:
     st.info("**Web version — runs entirely inside your browser.** PDFs you upload are processed on this "
             "computer and are not sent to any server. Results are kept in this browser only. "
-            "OCR for scanned (image-only) PDFs is available in the Windows installation, not in the web version.",
+            "Scanned (image-only) pages are read with in-browser OCR (Chrome or Edge); the OCR engine "
+            "(about 6 MB) downloads on first use.",
             icon="🔒")
 elif _is_hosted():
     st.warning("**Hosted test version.** Use only the synthetic test documents (Upload & Process → "

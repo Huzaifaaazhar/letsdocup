@@ -27,7 +27,7 @@
 <div id="root"></div>
 <script type="module">
 import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@1.12.2/build/stlite.js";
-const files = ["app.py", "bl_manager/__init__.py", "bl_manager/classification.py", "bl_manager/consol.py", "bl_manager/constants.py", "bl_manager/db.py", "bl_manager/exports.py", "bl_manager/extraction.py", "bl_manager/labels.py", "bl_manager/normalize.py", "bl_manager/page_parser.py", "bl_manager/pdf_reader.py", "bl_manager/pipeline.py", "bl_manager/reconstruction.py", "ui/__init__.py", "ui/batches.py", "ui/bl_view.py", "ui/common.py", "ui/dashboard.py", "ui/folders.py", "ui/forwarders.py", "ui/settings_page.py", "ui/upload.py", "tools/__init__.py", "tools/make_sample_pdfs.py", "tests/__init__.py", "tests/synthetic.py"];
+const files = ["app.py", "bl_manager/__init__.py", "bl_manager/classification.py", "bl_manager/consol.py", "bl_manager/constants.py", "bl_manager/db.py", "bl_manager/exports.py", "bl_manager/extraction.py", "bl_manager/labels.py", "bl_manager/normalize.py", "bl_manager/page_parser.py", "bl_manager/pdf_reader.py", "bl_manager/pipeline.py", "bl_manager/reconstruction.py", "bl_manager/web_ocr.py", "ui/__init__.py", "ui/batches.py", "ui/bl_view.py", "ui/common.py", "ui/dashboard.py", "ui/folders.py", "ui/forwarders.py", "ui/settings_page.py", "ui/upload.py", "tools/__init__.py", "tools/make_sample_pdfs.py", "tests/__init__.py", "tests/synthetic.py"];
 const fileMap = {};
 for (const f of files) fileMap[f] = { url: "./app/" + f };
 mount({

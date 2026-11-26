@@ -44,6 +44,34 @@ _NAME_CONTINUATION = re.compile(
 )
 
 
+SUSPECT_CONTAINER_RE = re.compile(r"(?<![A-Z0-9])([A-Z]{4})[ ]?([0-9OQDIlLSBGZ|]{6})[ ]?-?[ ]?([0-9OQDIlLSBGZ|])(?![A-Z0-9])")
+_CONFUSABLE = {"O": "0", "Q": "0", "D": "0", "I": "1", "L": "1", "|": "1", "S": "5", "B": "86", "G": "6", "Z": "2"}
+
+
+def _check_digit_candidates(norm: str) -> list[str]:
+    """Container numbers that the misread text COULD be and that pass the ISO
+    6346 check digit. Shown to the user as hints only — never applied."""
+    import itertools
+
+    head, tail = norm[:4], norm[4:].upper()
+    if not re.fullmatch(r"[A-Z]{4}", head):
+        return []
+    tails = [tail] if len(tail) == 7 else (
+        [tail[:i] + tail[i + 1:] for i in range(len(tail))] if len(tail) == 8 else [])
+    out: list[str] = []
+    for t in tails:
+        options = [(_CONFUSABLE.get(ch, ch) if not ch.isdigit() else ch) for ch in t]
+        if any(not o.isdigit() for opt in options for o in opt):
+            continue
+        for combo in itertools.product(*options):
+            cand = head + "".join(combo)
+            if container_check_digit_ok(cand) and cand not in out:
+                out.append(cand)
+            if len(out) > 3:
+                return out
+    return out
+
+
 def _field(values, page=None, method="", snippet="", status=None) -> dict:
     values = [v for v in (values or []) if v not in (None, "")]
     return {
@@ -275,6 +303,39 @@ def extract_document(pages: list[PageContent], bl_number: str | None, hbl_values
             }
             seen[norm] = rec
             containers.append(rec)
+    # Container-like text that is NOT a valid container number because some
+    # characters look misread (e.g. OCR 'CAIUB022170'). Never auto-corrected:
+    # reported so the BL goes to Manual Review ("unreadable container number").
+    suspects: list[dict] = []
+    for pno, t in enumerate(page_texts, start=1):
+        for m in SUSPECT_CONTAINER_RE.finditer(t):
+            raw = m.group(0)
+            norm = normalize_container(raw)
+            if CONTAINER_RE.fullmatch(raw) or norm in seen or (bl_number and norm in bl_number.upper()):
+                continue
+            if _SEAL_BEFORE.search(t[max(0, m.start() - 20): m.start()]):
+                continue
+            if sum(ch.isdigit() for ch in norm[4:]) < 5:
+                continue
+            if any(sp["raw"] == raw for sp in suspects):
+                continue
+            suspects.append({"raw": raw, "page": pno, "candidates": _check_digit_candidates(norm)})
+    # Also: any ID-like token printed under the "Container No." column that is
+    # not a valid container number (catches inserted/dropped characters too,
+    # e.g. OCR 'TGHUS5532019').
+    for pno, _label, line in _column_lines(hits_by_page, pages, "containers"):
+        if re.match(r"\s*SEAL", line, re.I):
+            continue
+        for tok in re.split(r"[\s/,;]+", line):
+            tok = tok.strip(".:()[]")
+            norm = normalize_container(tok)
+            if (len(norm) < 9 or sum(ch.isdigit() for ch in norm) < 5 or not re.match(r"[A-Z]{3}", norm)
+                    or CONTAINER_RE.fullmatch(norm) or norm in seen or (bl_number and norm in bl_number.upper())
+                    or any(sp["raw"] == tok for sp in suspects)):
+                continue
+            suspects.append({"raw": tok, "page": pno, "candidates": _check_digit_candidates(norm)})
+    fields["_meta_suspect_containers"] = suspects
+
     fields["containers"] = _field([c["container"] for c in containers],
                                   containers[0]["pages"][0] if containers else None,
                                   "container-number pattern (4 letters + 7 digits)" if containers else "",
@@ -287,8 +348,9 @@ def extract_document(pages: list[PageContent], bl_number: str | None, hbl_values
     # --- OCR note ---------------------------------------------------------
     if any(pc.source == "ocr" for pc in pages):
         warnings.append("One or more pages were read by OCR. OCR can misread characters — verify all values.")
-        for f in fields.values():
-            f["ocr"] = True
+        for k, f in fields.items():
+            if not k.startswith("_"):
+                f["ocr"] = True
 
     return fields, containers, warnings
 
